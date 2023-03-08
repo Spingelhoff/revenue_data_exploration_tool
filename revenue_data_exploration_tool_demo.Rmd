@@ -1,0 +1,67 @@
+---
+title: "Creating a Data Exploration Tool for Revenue Data Using Shiny"
+author: "Victor Lao"
+output: 
+  html_document:
+    theme: paper
+    toc: true
+---
+
+## Introduction
+
+Shiny provides a framework for rapid development of data-oriented applications. This can be particularly useful when combined with data manipulation frameworks. Leveraging both technologies it is possible to disseminate substantial amounts of aggregated data, in a readable, interactive way, for domain experts to make use of. 
+
+In order to demonstrate the functionality of R, and particularly the Shiny framework, to the workplace, I took some of my own time to create a demo app summarizing and visualizing sales data. The variables and comparisons implemented for exploration were based on current workplace data availability. The app was then ported to a desktop format using the DesktopDeployR framework to avoid IT security bureaucracy. 
+
+
+## Methodology
+
+The data used by the app is synthetic, but the organization is strongly influenced by the format of the data currently obtainable. The benefit of this is two-fold. First, the structure of data is familiar which aids in communication of app functions (i.e., employees can extrapolate how the data is crunched as they have worked with it before). Second, by forming a template of minimally required information, new data can more easily be coerced into an app compatible form (given all the necessary variables exist).
+
+A key feature of the app is the ability to optionally filter the data for time period and all categorical variables (Department, Taker, Salesman ID, Vendor and Customer) allowing the user control over the granularity of detail visualized. The ability to filter dates also allows for comparisons across time periods. Filtering of data was placed directly upstream of all visual/analytical endpoints (i.e., all visualizations are reactive and change to the same filtered dataset). Filtering placed on a collapsible sidebar to allow convenient manipulation.
+
+```{r eval=FALSE, include=TRUE}
+ Sales_Values <- reactive({
+    tempData <- importedData %>%
+      dplyr::filter(Invoice.Date >= input$MInput[1] & Invoice.Date <= input$MInput[2])
+    if (!is.null(input$DInput)) {
+      tempData <- tempData %>%
+        filter(Department %in% input$DInput)
+    }
+    if (!is.null(input$TInput)) {
+      tempData <- tempData %>%
+        filter(Taker %in% input$TInput)
+    }
+    if (!is.null(input$RInput)) {
+      tempData <- tempData %>%
+        filter(Salesrep.Id %in% input$RInput)
+    }
+    if (!is.null(input$CInput)) {
+      tempData <- tempData %>%
+        filter(Customer.Name %in% input$CInput)
+    }
+    if (!is.null(input$VInput)) {
+      tempData <- tempData %>%
+        filter(Vendor %in% input$VInput)
+    }
+    tempData
+  })
+```
+
+Directly right of the sidebar are three key summary stats on the filtered data (Revenue, Number of Invoices, Unique Customers). These are frozen on top of the screen as they are numbers that are very likely to be relevant to analysis. 
+A collection of analytical visualizations was placed in a set of tabs. The Summary section expands the summary stats frozen at the top of the tab set. One key measure available here is a calculation of profit margin. By making the Summary section the default tab, computation is kept to a minimum allowing the app to respond quickly to user filters. Other tabs contain graphical interfaces to the data and take longer to respond – particularly if the data visualized is large. 
+A combination of ggplot and plotly (mainly to convert the ggplot into an interactive plot) were used to create graphs that splay out data in a way that is permissive to exploration. Plotly interactivity features were key in unlocking the ability to drill down on data. The hope is that these plots will not only allow users to summarize data visually but also form further questions which can feed back into further analysis. A raw table was also included using the DT package.
+
+R is an open-source language geared towards data analysis but is unfortunately not ubiquitous in business. IT bureaucracy is notorious in approving new technologies and with shiny being a webapp framework primarily – which requires investment of web infrastructure, quick deployment of solutions is all but impossible. To circumvent this annoyance, I used DesktopDeployR to convert the shiny app into a desktop app (essentially). Briefly, DesktopDeployR uses a combination of a portable R framework and scripts to run the shiny app from folder. Importantly, this framework does not require administrative privileges or effort on the IT teams’ part to safely deploy. 
+
+## References
+
+C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and Hall/CRC Florida, 2020.
+
+Chang W, Cheng J, Allaire J, Sievert C, Schloerke B, Xie Y, Allen J, McPherson J, Dipert A, Borges B (2022). _shiny: Web Application Framework for R_. R package version 1.7.4, https://CRAN.R-project.org/package=shiny.
+
+wleepang (2020) DesktopDeployR [Source code] https://github.com/wleepang/DesktopDeployR.
+
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” Journal of Open Source Software, 4(43), 1686. doi:10.21105/joss.01686.
+
+Xie Y, Cheng J, Tan X (2023). _DT: A Wrapper of the JavaScript Library 'DataTables'_. R package version 0.27, https://CRAN.R-project.org/package=DT.
